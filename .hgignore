@@ -1,0 +1,14 @@
+syntax:glob
+
+.coverage
+.DS_Store
+.cache
+
+*.py[co]
+*.log
+*.orig
+
+.idea
+
+yarely/.tox
+yarely/.git
