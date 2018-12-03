@@ -13,6 +13,7 @@ import os
 
 # Third party imports
 from sphinx.ext.autodoc import ClassDocumenter
+from unittest.mock import MagicMock
 
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
@@ -58,6 +59,17 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = "sphinx"
 
 autoclass_content = 'both'
+
+
+# -- Mock imports ------------------------------------------------------
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['pyobjc']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # -- Options for HTML output -------------------------------------------
