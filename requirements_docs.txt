@@ -1,0 +1,4 @@
+pyserial
+tornado
+zmq
+certifi

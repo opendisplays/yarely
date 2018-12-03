@@ -68,7 +68,10 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['pyobjc']
+MOCK_MODULES = [
+    'pyobjc', 'Core', 'PyObjCTools', 'AppHelper', 'AppKit', 'Foundation',
+    'WebKit', 'objc'
+]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
@@ -147,7 +150,7 @@ def skip(app, what, name, obj, skip, options):
           "_DurationBasedAllocator", "_EqualDistributionAllocator",
           "_RandomAllocator", "_RatioAllocator", "_RecencyBasedAllocator",
           "_YarelyConfig"
-        ) 
+        )
     ):
         #options['undoc-members'] = False
         return False
