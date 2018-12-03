@@ -26,7 +26,7 @@ Mac OS X (>=10.6):
 .. image:: https://img.shields.io/travis/opendisplays/yarely.svg
         :target: https://travis-ci.org/opendisplays/yarely
 
-Dependancies
+Dependencies
 -------------
 
 .. image:: https://pyup.io/repos/github/opendisplays/yarely/shield.svg
