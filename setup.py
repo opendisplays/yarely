@@ -24,7 +24,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 platforms = ["Mac OS X >= 10.6"]
-requirements = ['pyserial', 'tornado', 'zmq', 'PyObjC', 'certifi']
+requirements = ['pyserial', 'tornado', 'zmq', 'certifi']
 test_requirements = []
 
 setup(
