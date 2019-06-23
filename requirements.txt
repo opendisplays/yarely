@@ -2,4 +2,4 @@ pyserial
 tornado
 zmq
 PyObjC
-certifi
+certifi==2019.6.16
