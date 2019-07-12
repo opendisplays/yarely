@@ -1,6 +1,6 @@
 pyserial
 tornado
 zmq
-PyObjC
 certifi
 python-vlc
+PySide2
