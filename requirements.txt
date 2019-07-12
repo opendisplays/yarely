@@ -1,6 +1,6 @@
 pyserial
 tornado
-zmq
+pyzmq
 certifi
 python-vlc
 PySide2
