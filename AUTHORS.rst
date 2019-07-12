@@ -14,7 +14,7 @@ Significant portions of Yarely were initially developed as part of `Dr. Sarah Cl
 Maintainers
 ------------------------
 * Sarah Clinch <seclinch@gmail.com>
-* Mateusz Mikusz <m.mikusz@lancaster.ac.uk>
+* Mateusz Mikusz <m.mikusz@acm.org>
 
 
 Contributors
@@ -23,6 +23,7 @@ Contributors
 * Sarah Clinch <seclinch@gmail.com>
 * Nigel Davies <n.a.davies@lancaster.ac.uk>
 * Adrian Friday <a.friday@lancaster.ac.uk>
+* Ludwig Trotter <l.k.trotter@lancaster.ac.uk>
 * Mateusz Mikusz <m.mikusz@lancaster.ac.uk>
 * Peter Shaw <p.shaw@lancaster.ac.uk>
 * Graham Clinch <g.clinch@lancaster.ac.uk>
