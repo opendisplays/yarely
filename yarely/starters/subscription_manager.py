@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-
 # -*- coding: utf-8 -*-
 #
-# Copyright 2011-2016 Lancaster University.
+# Copyright 2011-2019 Lancaster University.
 #
 #
 # This file is part of Yarely.

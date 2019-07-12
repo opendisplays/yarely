@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2011-2016 Lancaster University.
+# Copyright 2011-2019 Lancaster University.
 #
 #
 # This file is part of Yarely.
 #
 # Licensed under the Apache License, Version 2.0.
 # For full licensing information see /LICENSE.
-
 
 import os
 import sys
@@ -49,7 +48,7 @@ YARELY_PYTHON3_BIN_ENVIRONMENT_KEY = "YARELY_PYTHON3_BIN"
 
 # module_name_template replacement fields
 module_name_fields = {
-    "platform": sys.platform
+    "platform": 'qt5'
 }
 
 verbose = ("YARELY_STARTER_VERBOSE" in os.environ)
@@ -102,6 +101,8 @@ def exec_module(module_name_template, requirements, arguments):
     module_name = module_name_template.format(**module_name_fields)
     python_binary = get_python_binary(requirements)
 
+    print(python_binary)
+
     python_arguments = [python_binary, "-m", module_name]
     python_arguments.extend(arguments)
     python_arguments.extend(sys.argv[1:])
@@ -134,22 +135,23 @@ def exec_module(module_name_template, requirements, arguments):
     if verbose:
         msg = "Executing Python interpreter '{python_binary}' " \
               "with arguments '{python_arguments!r}' in environment"
-        print(msg.format(
-            python_binary=python_binary, python_arguments=python_arguments
-        ))
+        print(msg.format(python_binary=python_binary,
+            python_arguments=python_arguments))
         pprint(environment)
 
     try:
+        print(python_binary)
+        print(python_arguments)
+        print(environment)
         os.execvpe(python_binary, python_arguments, environment)
+        print("AFTER")
     except Exception as e:
         msg = "Failed to execute Python interpreter '{python_binary}' " \
               "with arguments '{python_arguments!r}' in environment " \
               "'{environment!r}'"
-        raise StarterError(msg.format(
-            python_binary=python_binary,
+        raise StarterError(msg.format(python_binary=python_binary,
             python_arguments=python_arguments,
-            environment=environment
-        )) from e
+            environment=environment)) from e
 
 
 def get_python_binary(requirements):

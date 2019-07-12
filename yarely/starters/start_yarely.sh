@@ -1,18 +1,10 @@
 #!/bin/sh
+killall python3
+killall python3
+killall python3
 
-
-# -*- coding: utf-8 -*-
-#
-# Copyright 2011-2016 Lancaster University.
-#
-#
-# This file is part of Yarely.
-#
-# Licensed under the Apache License, Version 2.0.
-# For full licensing information see /LICENSE.
-
-
-./facade.py &
-./sensor_manager.py &
-./subscription_manager.py &
-./scheduler.py
+./proj/yarely/starters/facade.py &
+sleep 5 
+./proj/yarely/starters/sensor_manager.py &
+./proj/yarely/starters/subscription_manager.py &
+./proj/yarely/starters/scheduler.py

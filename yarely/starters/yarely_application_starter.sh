@@ -1,17 +1,5 @@
 #!/bin/sh
 
-
-# -*- coding: utf-8 -*-
-#
-# Copyright 2011-2016 Lancaster University.
-#
-#
-# This file is part of Yarely.
-#
-# Licensed under the Apache License, Version 2.0.
-# For full licensing information see /LICENSE.
-
-
 # Start a yarely application by pretending it's a module and passing in the
 # path to the yarely configuration file.
 # Example (valid on Darwin/Mac OS X):
@@ -31,7 +19,7 @@
 ### No user serviceable parts contained below ###
 
 if [ -z "$YARELY_CONFIG" ]; then
-    YARELY_CONFIG="${HOME}/proj/yarely/yarely/config/yarely.cfg"
+    YARELY_CONFIG="${HOME}/proj/yarely/config/yarely.cfg"
 fi
 
 starters_path="`dirname "$0"`"
