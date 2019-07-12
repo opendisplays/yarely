@@ -33,3 +33,7 @@ TOUCH_INPUT_LAYOUT_MARGIN = 20  # pixel
 TOUCH_INPUT_APP_SELECTION_TIMEOUT = 10  # seconds
 TOUCH_INPUT_APP_SELECTION_POSITION = 'touch_interaction_app_selection'
 TOUCH_INPUT_BUTTON_POSITION = 'touch_interaction_button'
+
+# Support custom background content
+BACKGROUND_CONTENT_TYPE = 'text/html; background_content'
+BACKGROUND_CONTENT_POSITION = 'background_content'
