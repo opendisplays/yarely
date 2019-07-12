@@ -12,28 +12,34 @@
 """Renderer and caching related constants."""
 
 # FIXME -- will need fixing for multiple platforms
-_ARG_RENDER_NAMESPACE = 'yarely.darwin.content.rendering.handlers'
+_ARG_RENDER_NAMESPACE = 'yarely.qt5.content.rendering.handlers'
 
 _MIME_TYPE_CONFIG_MAP = {
     'application/pdf': {
         'module': '.image', 'param_type': 'path', 'precache': True,
-        'stream': False},
+        'stream': False, 'restart_renderer': False
+    },
     'image': {
         'module': '.image', 'param_type': 'path', 'precache': True,
-        'stream': False},
+        'stream': False, 'restart_renderer': False
+    },
     'text': {
         'module': '.web', 'param_type': 'uri', 'precache': False,
-        'stream': False},
+        'stream': False, 'restart_renderer': False
+    },
     'video': {
-        'module': '.qtmovie', 'param_type': 'uri', 'precache': True,
-        'stream': False},
+        'module': '.video', 'param_type': 'uri', 'precache': True,
+        'stream': False, 'restart_renderer': True
+    },
     'video/vnd.vlc': {
-        'module': '.vlc', 'param_type': 'uri', 'precache': False,
-        'stream': True},
+        'module': '.video', 'param_type': 'uri', 'precache': False,
+        'stream': True, 'restart_renderer': True
+    },
     'video/quicktime': {
-        'module': '.vlc', 'param_type': 'uri', 'precache': True,
-        'stream': False},
+        'module': '.video', 'param_type': 'uri', 'precache': True,
+        'stream': False, 'restart_renderer': True
+    },
 }
 
 # For fading windows...
-_FADING_ANIMATION_DURATION = 0.8
+_FADING_ANIMATION_DURATION = 2.5
