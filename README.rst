@@ -21,11 +21,14 @@ Details of design and implementation of Yarely and associated components can be 
 Build Status
 -------------
 
-Mac OS X (>=10.6):
-
 .. image:: https://img.shields.io/travis/opendisplays/yarely.svg
         :target: https://travis-ci.org/opendisplays/yarely
 
+This version of Yarely yas been tested with the following operating systems:
+
+* macOS Mojave (10.14.5)
+* Kubuntu Bionic Beaver (18.04 LTS)
+* Kubuntu Disco Dingo (19.04)
 
 Dependencies
 -------------
