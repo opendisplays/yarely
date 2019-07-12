@@ -41,7 +41,7 @@ def application_loop(concrete, *args, **kwargs):
 
     def terminate(cause):
         """Attempt a clean termination logging the cause."""
-        log.info('Termination from {cause}'.format(cause=cause))
+        log.debug('Termination from {cause}'.format(cause=cause))
         application.stop()
         sys.exit()
 
