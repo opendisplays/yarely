@@ -3,3 +3,4 @@ tornado
 zmq
 PyObjC
 certifi
+python-vlc
