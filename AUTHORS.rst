@@ -24,7 +24,7 @@ Contributors
 * Nigel Davies <n.a.davies@lancaster.ac.uk>
 * Adrian Friday <a.friday@lancaster.ac.uk>
 * Ludwig Trotter <l.k.trotter@lancaster.ac.uk>
-* Mateusz Mikusz <m.mikusz@lancaster.ac.uk>
+* Mateusz Mikusz <m.mikusz@acm.org>
 * Peter Shaw <p.shaw@lancaster.ac.uk>
 * Graham Clinch <g.clinch@lancaster.ac.uk>
 * Bholanathsingh Surajbali <surajbali@gmail.com>
