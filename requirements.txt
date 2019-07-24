@@ -1,4 +1,4 @@
-pyserial
+pyserial==3.4
 tornado
 zmq
 PyObjC
