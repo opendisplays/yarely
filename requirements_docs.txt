@@ -1,4 +1,4 @@
 pyserial
 tornado
-zmq
+zmq==0.0.0
 certifi
