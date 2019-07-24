@@ -160,7 +160,7 @@ class _ContextConstraintsParser(ZMQRPC):
         """
 
         msg_string = ElementTree.tostring(msg_elem)
-        log.debug("Receiving sensor update: {}".format(msg_string))
+        log.info("Receiving sensor update: {}".format(msg_string))
 
         # Write the incoming XML data into the context store. We expect this to
         # be a ContentItem element.

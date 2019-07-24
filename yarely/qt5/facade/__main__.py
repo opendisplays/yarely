@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -*- coding: utf-8 -*-
 #
 # Copyright 2011-2019 Lancaster University.
@@ -10,10 +8,7 @@
 # Licensed under the Apache License, Version 2.0.
 # For full licensing information see /LICENSE.
 
+from yarely.qt5.facade import facade
 
-import common
-
-module_name_template = "yarely.core.scheduling.manager"
-requirements = []
-
-common.launch_application(module_name_template, requirements)
+if __name__ == "__main__":
+    facade.main()

@@ -68,7 +68,7 @@ class PullHandler(Handler):
     def _fail(self, cause):
         self.window = min(self.window * 2, self.refresh_rate)
         self.start_read_timer(self.window)
-        log.warn(cause)
+        log.warning(cause)
 
     def _success(self):
         self.last_read = time.time()

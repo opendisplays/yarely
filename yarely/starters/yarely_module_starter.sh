@@ -1,17 +1,5 @@
 #!/bin/sh
 
-
-# -*- coding: utf-8 -*-
-#
-# Copyright 2011-2016 Lancaster University.
-#
-#
-# This file is part of Yarely.
-#
-# Licensed under the Apache License, Version 2.0.
-# For full licensing information see /LICENSE.
-
-
 # Start a yarely module with the appropriate paths configured.
 #
 # This is mostly called internally from yarely - yarely_application_starter.sh
@@ -24,6 +12,7 @@
 # It's probably better to alter YARELY_PARENT in the environment rather
 # than overwriting it in this script, but I'll leave this temptation here
 # just in case...
+#YARELY_PARENT="/Users/pdnet"
 
 ### No user serviceable parts contained below ###
 

@@ -37,7 +37,7 @@ from yarely.core.content import (
 
 
 log = logging.getLogger(__name__)
-DEFAULT_POSITION = 0
+DEFAULT_POSITION = 0  # Default position of the main content.
 
 
 class RendererError(Exception):
@@ -184,8 +184,13 @@ class DisplayManager(ZMQRPC):
             item=str(item), position=position)
         )
 
-        # First we check if the item was already displayed at position.
-        if self._check_item_is_at_position(item, position):
+        content_type = item.get_content_type()
+        args = get_initial_args(content_type)
+
+        # If the item is already up on the display and the args for the
+        # content time indicate that it does not need to be restarted,
+        # then we skip and just leave it on.
+        if self._check_item_is_at_position(item, position) and not args['restart_renderer']:
             log.debug(
                 "Item {item} already at position {pos}. Not taking "
                 "it off again.".format(item=item, pos=position)
@@ -251,7 +256,7 @@ class DisplayManager(ZMQRPC):
     @classmethod
     def _get_yarely_module_starter_path(cls):
         return os.path.join(
-            cls._get_yarely_parent(), 'yarely', 'yarely', 'starters',
+            cls._get_yarely_parent(), 'yarely', 'starters',
             'yarely_module_starter.sh'
         )
 
@@ -367,7 +372,7 @@ class DisplayManager(ZMQRPC):
 
         # We want to log this case.
         renderer_uuid = self._get_renderer_uuid(msg_elem)
-        renderer = self.renderer.get_renderer(renderer_uuid)
+        renderer = self._get_renderer(renderer_uuid)
 
         error_msg = (
             "Failed to load {item} by renderer {subp} at position "
@@ -384,8 +389,11 @@ class DisplayManager(ZMQRPC):
             label=error_msg
         )
 
+        # Stop the renderer process as it's still running.
+        self._stop_renderer(renderer_uuid)
+
         # We can remove the renderer from our references.
-        self.renderer.remove(renderer_uuid)
+        self._remove_renderer(renderer_uuid)
 
         # Since this is running in a separate thread, we should just trigger
         # new item scheduling instead of raising an error. We don't want to
@@ -537,7 +545,7 @@ class DisplayManager(ZMQRPC):
             item_uri = platform.get_uri_from_local_path(item_uri)
 
         # Prepare the new renderer and start it
-        log.info('Starting new renderer: {args!s}'.format(args=cmd_args))
+        log.debug('Starting new renderer: {args!s}'.format(args=cmd_args))
         params_over_zmq = {args['param_type']: item_uri}
 
         # Add the layout

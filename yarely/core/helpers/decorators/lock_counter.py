@@ -37,3 +37,17 @@ def semaphore_lock_decorator(f):
         args[0].semaphore_lock_decorator_flag -= 1
 
     return wrapper
+
+
+def lock_decorator(f):
+    """ """
+    def wrapper(*args, **kwargs):
+
+        if args[0].scheduling_lock.locked():
+            log.debug("Scheduling locked - not interrupting.")
+            return
+
+        with args[0].scheduling_lock:
+            f(*args, **kwargs)
+
+    return wrapper

@@ -20,7 +20,6 @@ import time
 from xml.etree import ElementTree
 
 # Third party imports
-from phemelibrary import PhemeAnalytics
 import zmq
 
 # Local (Yarely) imports
@@ -31,6 +30,7 @@ from yarely.core.helpers.zmq import (
     ZMQ_ADDRESS_INPROC, ZMQ_DISPLAYCONTROLLER_REP_PORT, ZMQ_ADDRESS_LOCALHOST,
     ZMQ_SOCKET_LINGER_MSEC
 )
+from yarely.core.includes.phemelibrary import PhemeAnalytics
 
 
 log = logging.getLogger(__name__)

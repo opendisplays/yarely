@@ -16,6 +16,7 @@
 import logging
 import urllib.request
 from urllib.error import URLError
+from socket import timeout
 
 # Local (Yarely) imports
 from yarely.core.helpers.base_classes import PullHandler, HandlerError
@@ -52,10 +53,19 @@ class HTTPHandler(PullHandler):
         """
         # Pull the XML from the URI
         try:
-            with urllib.request.urlopen(self.uri) as http_handle:
+            with urllib.request.urlopen(self.uri, timeout=20.0) as http_handle:
                 xml = http_handle.read().strip()
         except URLError as e:
-            self._fail('Error reading HTTP source')
+            self._fail('Error reading HTTP source: {}'.format(self.uri))
+            return
+        except TimeoutError as e:
+            self._fail('TimeoutError when reading HTTP source: {}'.format(self.uri))
+            return
+        except timeout as e:
+            self._fail('Socket timeout when reading HTTP source: {}'.format(self.uri))
+            return
+        except Exception as e:
+            self._fail('Error writing update event: {e}'.format(e=e))
             return
 
         # Send XML to the manager

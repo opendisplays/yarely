@@ -41,10 +41,10 @@ SUBPROCESS_ID_STR_TEMPLATE = '{ms:x}:{id:x}'
 SUBPROCESS_LOGGER_FORMAT_TEMPLATE = '(spid={id_str}) {msg}'
 ZMQ_INTERNAL_TERMINATOR_PORT = 5554
 ZMQ_POLL_TIMEOUT = 500                # Milliseconds
-SUBPROCESS_CHECKIN_TIMEOUT = 3        # Seconds
+SUBPROCESS_CHECKIN_TIMEOUT = 5        # Seconds
 SUBPROCESS_KILLTERM_TIMEOUT = 5       # Seconds
-SUBPROCESS_REGISTRATION_TIMEOUT = 5   # Seconds
-SUBPROCESS_CHECK_INTERVAL = 0.2       # Seconds
+SUBPROCESS_REGISTRATION_TIMEOUT = 10   # Seconds
+SUBPROCESS_CHECK_INTERVAL = 0.5       # Seconds
 SUBPROCESS_FAILED_LIMIT = 5
 SUBPROCESS_RESTART_SLEEP = 10         # Seconds
 WARN_NO_REPLY = "No reply generated in ZMQ request handler, reply with error."
@@ -546,16 +546,16 @@ class SubprocessExecutionWithErrorCapturing:
         # This should never evaluate to True, but the poll() call also
         # sets the returncode attribute of self.subproc.
         if self.subproc.poll() is None:
-            self.log.error('Reached EOF but process is still executing')
+            self.log.debug('Reached EOF but process is still executing')
         return_code = self.subproc.returncode
         if return_code == 0:
-            log_level = logging.INFO
+            log_level = logging.DEBUG
         else:
-            log_level = logging.WARNING
+            log_level = logging.DEBUG
         msg = 'Detected process termination with returncode {rtncode}'
         self.log.log(log_level, msg.format(rtncode=return_code))
         msg = 'Detected process termination, daemon thread will stop'
-        self.log.info(msg)
+        self.log.debug(msg)
 
     def _registration_expired(self):
         """Checks if this object's registration period (for ZMQ registration)
