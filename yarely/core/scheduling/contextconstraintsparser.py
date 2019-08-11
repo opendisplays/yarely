@@ -33,6 +33,7 @@ from yarely.core.subscriptions.subscription_parser import (
 
 
 log = logging.getLogger(__name__)
+benchmark_logger = logging.getLogger('benchmarks')
 
 
 class _ContextConstraintsParser(ZMQRPC):
@@ -160,7 +161,7 @@ class _ContextConstraintsParser(ZMQRPC):
         """
 
         msg_string = ElementTree.tostring(msg_elem)
-        log.debug("Receiving sensor update: {}".format(msg_string))
+        log.info("Receiving sensor update: {}".format(msg_string))
 
         # Write the incoming XML data into the context store. We expect this to
         # be a ContentItem element.
@@ -210,10 +211,16 @@ class _ContextConstraintsParser(ZMQRPC):
         """
 
         # TODO - check msg_root vs msg_elem
+        # TODO - handle incomplete CDS updates
 
         log.debug("Handling subscription update...")
 
+        benchmark_logger.info("received_cds")
+
         parsed_cds = self._parse_raw_cds_xml(msg_elem)
+
+        benchmark_logger.info("parsed_cds")
+        benchmark_logger.info("number_of_items {}".format(len(parsed_cds)))
 
         if parsed_cds is not None:
             self.scheduler_mgr.cds_updates.put(parsed_cds)

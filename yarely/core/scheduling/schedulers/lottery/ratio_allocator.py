@@ -19,6 +19,8 @@ from yarely.core.scheduling.constants import DEFAULT_CONTENT_DURATION
 from yarely.core.scheduling.schedulers.lottery import LotteryTicketAllocator
 
 
+benchmark_logger = logging.getLogger('benchmarks')
+
 # Lookup table for optimisation: object ID to calculated ratios
 _CACHE = dict()
 log = logging.getLogger(__name__)
@@ -105,6 +107,8 @@ class _SimplePerItemRatioAllocator(LotteryTicketAllocator):
 
         self.ready = True
 
+        benchmark_logger.info("end_ratio_allocator")
+
 
 class _RatioAllocator(_SimplePerItemRatioAllocator):
     """ Allocate LotteryTickets to each ContentItem based on their ratio
@@ -117,6 +121,8 @@ class _RatioAllocator(_SimplePerItemRatioAllocator):
         on their ratio constraints and duration.
 
         """
+
+        benchmark_logger.info("start_ratio_allocator")
 
         # Grab all the items we need to allocate tickets to
         content_items = self.cds.get_content_items()

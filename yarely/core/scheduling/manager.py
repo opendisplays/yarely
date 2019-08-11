@@ -15,16 +15,16 @@ import queue
 import threading
 import time
 
-# Third-party imports
-from phemelibrary import PhemeAnalytics
-
 # Local Yarely imports
 from yarely.core.content.caching import CacheManager
+from yarely.core.content.helpers import get_initial_args
 from yarely.core.displaycontroller import DisplayClient
 from yarely.core.helpers.base_classes.application import ApplicationWithConfig
-from yarely.core.helpers.decorators.lock_counter import semaphore_lock_decorator
+from yarely.core.helpers.decorators.lock_counter import lock_decorator
 from yarely.core.helpers.execution import application_loop
+from yarely.core.includes.phemelibrary import PhemeAnalytics
 from yarely.core.scheduling.constants import (
+    BACKGROUND_CONTENT_POSITION, BACKGROUND_CONTENT_TYPE,
     CONTEXT_STORE_DEFAULT_DB_PATH, DEFAULT_CONTENT_DURATION,
     DISPLAY_ADDITIONAL_KEEP_ALIVE, TOUCH_INPUT_CONTENT_TYPE_APP_SELECTION,
     TOUCH_INPUT_CONTENT_TYPE_BUTTON, TOUCH_INPUT_LAYOUT_MARGIN,
@@ -40,6 +40,8 @@ from yarely.core.scheduling.schedulers.lottery.pipeline import LotterySchedulerP
 
 
 log = logging.getLogger(__name__)
+
+benchmark_logger = logging.getLogger('benchmarks')
 
 
 class SchedulingManager(ApplicationWithConfig):
@@ -68,7 +70,6 @@ class SchedulingManager(ApplicationWithConfig):
 
         # Allows us to power control the display
         self.display_client = DisplayClient()
-
         # Queues for handling CDS updates from Context and Constraints Parser
         self.cds_updates = queue.Queue()
 
@@ -92,10 +93,15 @@ class SchedulingManager(ApplicationWithConfig):
         # Cache Manager that we will initialise as soon as we need it
         self.cache_manager = None
 
+        # Counting number of iterations for our benchmarking
+        self.benchmark_iteration = 0
+
         # Analytics library will be initialised as soon as we need it
         self.analytics = None
 
-        # TODO - get this from config!
+        # Layout options for the main content renderer.
+        # TODO - get this rest from config!
+        self.default_main_content_layout = None
         self.number_of_items = 1  # Todo: we only support 1 at the moment.
         self.display_resolution_width = 1920
         self.display_resolution_height = 1080
@@ -106,6 +112,7 @@ class SchedulingManager(ApplicationWithConfig):
 
         # Flag that counts the number of times item scheduling was called.
         self.semaphore_lock_decorator_flag = 0
+        self.scheduling_lock = threading.Lock()
 
     def _cache_cds(self):
         """Add all items to the cache queue from CacheManager."""
@@ -186,6 +193,43 @@ class SchedulingManager(ApplicationWithConfig):
 
         self.analytics = PhemeAnalytics(analytics_tracking_id)
 
+    def _initialise_background_content(self):
+
+        log.debug("Initialising Background Content.")
+
+        background_content_active = self.config.get(
+            'MainContentRendererLayout', 'background_content_active',
+            fallback=False
+        )
+
+        if not background_content_active:
+            return
+
+        # Stop here if there are no content items at all.
+        if not self.cds:
+            log.debug("No CDS, stopping background image initialisation.")
+            return
+
+        # Stop here if we have initialised the touch button already.
+        background_item = (
+            self.display_manager.get_active_item(BACKGROUND_CONTENT_POSITION)
+        )[0]
+        if background_item:
+            log.debug("Background image was already initialised.")
+            return
+
+        background_content_item = self._get_item_by_content_type(
+            BACKGROUND_CONTENT_TYPE
+        )
+
+        if not background_content_item:
+            log.debug("Skipping background content item initialisation.")
+            return
+
+        self.display_manager.display_item(
+            background_content_item, position=BACKGROUND_CONTENT_POSITION
+        )
+
     def _initialise_cache_manager(self):
         cache_dir = self.config.get(
             'CacheFileStorage', 'CacheLocation', fallback="/tmp"
@@ -212,7 +256,45 @@ class SchedulingManager(ApplicationWithConfig):
         self.context_store = ContextStore(context_store_path)
 
     def _initialise_display_manager(self):
+
+        # Initialise the display manager
         self.display_manager = DisplayManager(self)
+
+        # Get the default layout config from the config file (if there is one).
+
+        custom_layout = self.config.get(
+            'MainContentRendererLayout', 'custom_layout_active',
+            fallback=False
+        )
+        x_position = self.config.get(
+            'MainContentRendererLayout', 'bottom_left_x_position',
+            fallback=None
+        )
+        y_position = self.config.get(
+            'MainContentRendererLayout', 'bottom_left_y_position',
+            fallback=None
+        )
+        width = self.config.get(
+            'MainContentRendererLayout', 'width',
+            fallback=None
+        )
+        height = self.config.get(
+            'MainContentRendererLayout', 'height',
+            fallback=None
+        )
+
+        if not custom_layout:
+            self.default_layout = None
+            return
+
+        self.default_main_content_layout = {
+            "layout_style": "x_y_width_height",
+            "layout_x": str(x_position),
+            "layout_y": str(y_position),
+            "layout_width": str(width),
+            "layout_height": str(height),
+            "layout_window_level_increase": str(1)
+        }
 
     def _initialise_touch_button(self):
         """ This is initialising the touch button window. If the content
@@ -393,7 +475,7 @@ class SchedulingManager(ApplicationWithConfig):
         self.cds = cds
         return True
 
-    @semaphore_lock_decorator
+    @lock_decorator
     def item_scheduling(self):
         """Walk through the whole process of scheduling content items. This
         consists of (1) stopping all background timeouts that could start
@@ -411,6 +493,11 @@ class SchedulingManager(ApplicationWithConfig):
 
         """
 
+        self.benchmark_iteration += 1
+        benchmark_logger.info(
+            "start_iteration {}".format(self.benchmark_iteration)
+        )
+
         # Report our internal state.
         self.report_internal_scheduler_state('start_item_scheduling')
 
@@ -418,8 +505,12 @@ class SchedulingManager(ApplicationWithConfig):
         # this method gets called only once (even if a subs update comes in).
         self._stop_item_scheduling_timeout()
 
+        benchmark_logger.info("start_filtering")
+
         self.report_internal_scheduler_state('start_filter')
         self.filtered_cds = self.filter_pipeline.filter_cds(self.cds)
+
+        benchmark_logger.info("end_filtering")
 
         # Check if there is any items left at all
         if not self.filtered_cds:
@@ -430,12 +521,19 @@ class SchedulingManager(ApplicationWithConfig):
             self._start_item_scheduling_timeout()
             return
 
+        benchmark_logger.info("start_lottery_pipeline")
+
         new_item = self.scheduler_pipeline.get_items_to_schedule(1)
+
+        benchmark_logger.info("end_lottery_pipeline")
 
         # Check if we got an item at all.
         if new_item is None or not new_item:
             self._start_item_scheduling_timeout()
             return
+
+        # (Re-) initialise background
+        self._initialise_background_content()
 
         # We only handle the case of one item at a time here.
         new_item = new_item[0]
@@ -458,9 +556,14 @@ class SchedulingManager(ApplicationWithConfig):
         # Only continue scheduling item if it is different to the current item.
         active_item, active_timestamp = self.display_manager.get_active_item()
 
+        # If we found the same item, we check if the item still has time left to run.
+        # We potentially reset the timeout.
+        # Otherwise we now always call the display manager to make sure that some
+        # items such as videos get restarted and don't get stuck if they have been
+        # scheduled subsequently.
         if new_item == active_item:
 
-            logging.debug("SAME ITEM!")
+            logging.info("SAME ITEM!")
 
             # Check the time difference between now and item first time
             # displayed and compare it with the content duration.
@@ -473,35 +576,44 @@ class SchedulingManager(ApplicationWithConfig):
             )
 
             # If we don't have a content duration it doesn't matter, we can
-            # just restart item scheduling with default timeout.
-            # We will also ping the analytics here so that the monitoring won't
-            # complain that the display is not reporting anything (for the case
-            # that the schedule only consists of one item).
-            if active_item_duration is None:
-                # active_item and new_item are the same in this case.
-                self.report_pageview(active_item)
-                self._start_item_scheduling_timeout(DEFAULT_CONTENT_DURATION)
-                return
+            # just restart item scheduling with default timeout (i.e. continue
+            # with the same behaviour as a new item was scheduled. This will
+            # also ping the analytics and report a 'new' content item.
+            if active_item_duration is not None:
+                # Otherwise we want to make sure that the item restarts after its
+                # time runs out, especially important for videos.
+                time_difference = time.time() - active_timestamp
 
-            # Otherwise we want to make sure that the item restarts after its
-            # time runs out, especially important for videos.
-            time_difference = time.time() - active_timestamp
+                # Stop here if the item still has time left. Restart timeout in
+                # this case with the amount of time the item has left though.
 
-            # Stop here if the item still has time left. Restart timeout in
-            # this case with the amount of time the item has left though.
-            if time_difference < active_item_duration:
-                self._start_item_scheduling_timeout(int(time_difference))
-                return
+                time_left = int(active_item_duration - time_difference)
 
-            # Otherwise continue and re-schedule the piece of content.
+                if time_left > 0:
+                    log.debug(
+                        "Time left, rerunning lottery in {} seconds.".format(time_left)
+                    )
+                    self._start_item_scheduling_timeout(time_left)
+                    return
 
-        log.debug("NEW ITEM TO SCHEDULE: {}".format(new_item))
+        log.info("NEW ITEM TO SCHEDULE: {}".format(new_item))
 
         # Errors are now handled by Display Manager.
         # If the renderer was able to display the content item, it will
         # automatically trigger a page view event. Otherwise it will trigger
         # item scheduling.
-        self.display_manager.display_item(new_item)
+        # If the same item was previously scheduled, the display manager
+        # will work out whether or not the renderer needs to be restarted.
+        # This will keep, for example, videos running.
+        benchmark_logger.info("start_display_item")
+
+        self.display_manager.display_item(
+            new_item, layout=self.default_main_content_layout
+        )
+
+        benchmark_logger.info("end_display_item")
+
+        benchmark_logger.info("start_timeout")
 
         # We just assume here that it worked out to show the item and keep
         # the display awake. This will keep the last item visible on the
@@ -509,6 +621,9 @@ class SchedulingManager(ApplicationWithConfig):
         self.display_client.keep_display_alive_duration(
             display_keep_alive_duration
         )
+
+        benchmark_logger.info("winning_item {}".format(new_item))
+        benchmark_logger.info("item_duration {}".format(new_item_duration))
 
         # Restart item scheduling after the content duration of new item.
         self._start_item_scheduling_timeout(new_item_duration)
@@ -552,6 +667,9 @@ class SchedulingManager(ApplicationWithConfig):
 
             # Check if we have to (re-) initialise the touch button.
             self._initialise_touch_button()
+
+            # Or reinitialise the background page
+            self._initialise_background_content()
 
     def report_event(self, category, action, value, label=None):
         """ Report a custom event for our analytics service. This is just a wrapper around the
@@ -617,6 +735,7 @@ class SchedulingManager(ApplicationWithConfig):
         # Start context and constraints parser, scheduler and display manager.
         self.cc_parser.start()
         self.display_manager.start()
+        self._initialise_background_content()
         self.main()
 
     def stop(self):

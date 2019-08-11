@@ -36,6 +36,9 @@ DEFAULT_FILTERS = (
 log = logging.getLogger(__name__)
 
 
+benchmark_logger = logging.getLogger('benchmarks')
+
+
 class FilterPipeline(object):
     """ Runs all filters on the content descriptor set in order. If at least
     one filter removes an item from the CDS, it will not be shown on the
@@ -86,10 +89,18 @@ class FilterPipeline(object):
                 )
             )
 
+            benchmark_logger.info(
+                "start_filter_{}".format(FilterClass.__name__)
+            )
+
             tmp_filter = FilterClass(
                 filtered_cds, self.context_store, self._config()
             )
             filtered_cds = tmp_filter.filter_cds()
+
+            benchmark_logger.info(
+                "end_filter_{}".format(FilterClass.__name__)
+            )
 
             log.debug(
                 "Done with {} items".format(

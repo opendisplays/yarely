@@ -19,20 +19,23 @@ import time
 # Local (Yarely) imports
 from yarely.core.scheduling.schedulers import Scheduler
 from yarely.core.scheduling.schedulers.lottery import (
-    LotteryTicket, RatioAllocator
+    LotteryTicket, RatioAllocator, RecencyBasedAllocator
 )
+
+from concurrent.futures import ThreadPoolExecutor
 
 
 # Configuration for the lottery scheduler
 # All methods that can allocate tickets. Number of tickets each of these can
 # allocate is specified as 'lottery_tickets'.
 DEFAULT_TICKET_ALLOCATORS = {
-    RatioAllocator: {'lottery_tickets': 1000}
+    RatioAllocator: {'lottery_tickets': 5000},
+    RecencyBasedAllocator: {'lottery_tickets': 5000},
 }
-DEFAULT_TICKET_ALLOCATOR_TIMEOUT_SEC = 15
-
+DEFAULT_TICKET_ALLOCATOR_TIMEOUT_SEC = 5
 
 log = logging.getLogger(__name__)
+benchmark_logger = logging.getLogger('benchmarks')
 
 
 class LotterySchedulerPipeline(Scheduler):
@@ -49,6 +52,8 @@ class LotterySchedulerPipeline(Scheduler):
         self.ticket_pool = set()
         self.ticket_allocator_threads = set()
         self._initialise_ticket_allocators()
+        self.executer = ThreadPoolExecutor(max_workers=1)
+        self.executer_pool = set()
 
     def _all_ticket_allocators_ready(self):
         """ Loop through all instances and check if the allocators are ready.
@@ -60,7 +65,12 @@ class LotterySchedulerPipeline(Scheduler):
 
     def _draw_winner(self):
         """ FIXME """
+        benchmark_logger.info("num_of_tickets_to_draw {}".format(
+            len(self.ticket_pool))
+        )
+        benchmark_logger.info("start_draw")
         winning_ticket = random.sample(self.ticket_pool, 1)[0]
+        benchmark_logger.info("end_draw")
         self._report_winning_ticket(winning_ticket)
         return winning_ticket
 
@@ -156,8 +166,10 @@ class LotterySchedulerPipeline(Scheduler):
                     len(self.filtered_cds().get_content_items())
                 )
             )
-            tmp_allocator.start()
+            # tmp_allocator.start()
+            future = self.executer.submit(tmp_allocator.run)
             self.ticket_allocator_threads.add(tmp_allocator)
+            self.executer_pool.add(future)
 
         self.scheduler_mgr.report_internal_scheduler_state(
             'lottery_scheduler_total_empty_tickets', count_total_empty_tickets
@@ -179,8 +191,12 @@ class LotterySchedulerPipeline(Scheduler):
         # Keep checking if all ticket allocators are ready. We will wait until
         # all ticket allocators are done with the ticket allocation and then
         # grab all the tickets afterwards.
-        while not self._all_ticket_allocators_ready():
-            time.sleep(0.1)
+        # while not self._all_ticket_allocators_ready():
+        #     time.sleep(0.1)
+        benchmark_logger.info("start_waiting_for_threads")
+        for future in self.executer_pool:
+            future.result()
+        benchmark_logger.info("end_waiting_for_threads")
 
         self.scheduler_mgr.report_internal_scheduler_state(
             'start_lottery_scheduler_item_drawing'

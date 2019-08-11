@@ -17,51 +17,16 @@ import logging
 from yarely.core.scheduling.contextstore.constants import CONTEXT_TYPE_PAGEVIEW
 from yarely.core.scheduling.schedulers.lottery import LotteryTicketAllocator
 
-
 UNTIL_DATETIME_COUNT = timedelta(hours=2)
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('benchmarks')
+benchmark_logger = logging.getLogger('benchmarks')
 
 
 class _RecencyBasedAllocator(LotteryTicketAllocator):
     """Distribute tickets based on the count of recently played content items.
 
     """
-
-    @staticmethod
-    def _content_item_comparison_weak(item_a, item_b):
-        """Compare two ContentItem objects with each other in a weak way -
-        we only take the filename and path into consideration and ignore
-        constraints (as the proper __eq__ method would do).
-
-        """
-        return str(item_a) == str(item_b)
-
-    @classmethod
-    def _content_item_in_list(cls, content_item, list_of_items):
-        for item_in_list in list_of_items:
-            if cls._content_item_comparison_weak(item_in_list, content_item):
-                return True
-        return False
-
-    def _filter_played_items(self, played_content_items):
-        """Filter the previously played content items for these that are in
-        the CDS.
-
-        """
-        eligible_content_items = self.cds.get_content_items()
-        remove_items = []
-        for item in played_content_items:
-            if self._content_item_in_list(
-                    item['content_item'], eligible_content_items
-            ):
-                continue
-            remove_items.append(item)
-
-        for item in remove_items:
-            played_content_items.remove(item)
-
-        return played_content_items
 
     def _least_played_content_items(self):
         # Getting the counts for content items that were played within within
@@ -73,22 +38,6 @@ class _RecencyBasedAllocator(LotteryTicketAllocator):
         counts = list(reversed(counts))
         return counts
 
-    def _get_not_played_items(self, played_content_items):
-        content_items = self.cds.get_content_items()
-        not_played_items = []
-        played_content_items_list = [
-            item['content_item'] for item in played_content_items
-        ]
-
-        for item in content_items:
-            if self._content_item_in_list(item, played_content_items_list):
-                continue
-
-            tmp_entry = {'content_item': item, 'num_of_entries': 0}
-            not_played_items.append(tmp_entry)
-
-        return not_played_items
-
     def allocate_tickets(self):
         """Allocate 1/2 of all tickets to the least played content item,
         then 1/2 of the remaining tickets to the next least played item etc.
@@ -97,30 +46,51 @@ class _RecencyBasedAllocator(LotteryTicketAllocator):
 
         """
 
-        # Get all items that were played...
+        benchmark_logger.info("start_recency_allocator")
+
+        # Get list of content items and generate set for faster lookup.
+        cds_list = self.cds.get_content_items()
+
+        # Prepare a dict and set of each content item for efficient lookups
+        # later-on.
+        str_to_item_cds = dict()
+        cds_set = set()
+
+        for item in cds_list:
+            item_str = str(item)
+            str_to_item_cds[item_str] = item
+            cds_set.add(item_str)
+
+        # Get all items that were played from the Context Store.
         played_content_items = self._least_played_content_items()
 
         log.debug("Nu of played content items {}".format(
             len(played_content_items)
         ))
 
-        # ... filter these items out that are not eligible to play right now...
-        filtered_content_items = self._filter_played_items(
-            played_content_items
-        )
+        # Filter items out that are not eligible to play right now.
+        to_remove = list()
+        filtered_str_set = set()  # For efficient lookups...
 
-        log.debug("Number of filtered content items {}".format(
-            len(filtered_content_items)
-        ))
+        for played_item_cds in played_content_items:
+            item_str = str(played_item_cds['content_item'])
+            if item_str not in cds_set:
+                to_remove.append(played_item_cds)
+                continue
+            filtered_str_set.add(item_str)
 
-        # ... and populate the list with items that weren't played at all.
-        filtered_content_items.extend(
-            self._get_not_played_items(filtered_content_items)
-        )
+        filtered_content_items = played_content_items
 
-        log.debug("Number of content items considered for algorithm {}".format(
-            len(filtered_content_items)
-        ))
+        for remove_item in to_remove:
+            filtered_content_items.remove(remove_item)
+
+        # Add those that have not been played
+
+        for item in cds_list:
+            if str(item) in filtered_str_set:
+                continue
+            tmp_entry = {'content_item': item, 'num_of_entries': 0}
+            filtered_content_items.insert(0, tmp_entry)
 
         # Our pointer for walking through the list of filtered content items.
         pointer = 0
@@ -129,7 +99,7 @@ class _RecencyBasedAllocator(LotteryTicketAllocator):
             # Always allocate half of the available tickets to the first
             # content item in the list
             num_of_tickets = int(len(self.tickets_for_allocation)/2) + 1
-            log.debug("{} tickets for {}".format(
+            benchmark_logger.debug("{} tickets for {}".format(
                 num_of_tickets, str(filtered_content_items[pointer])
             ))
 
@@ -144,3 +114,5 @@ class _RecencyBasedAllocator(LotteryTicketAllocator):
             pointer = (pointer + 1) % len(filtered_content_items)
 
         self.ready = True
+
+        benchmark_logger.info("end_recency_allocator")
