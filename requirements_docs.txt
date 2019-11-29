@@ -1,4 +1,4 @@
 pyserial
 tornado
 zmq
-certifi
+certifi==2019.11.28
