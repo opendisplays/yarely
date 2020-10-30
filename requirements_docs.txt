@@ -1,4 +1,4 @@
 pyserial
-tornado
+tornado==6.1
 zmq
 certifi
