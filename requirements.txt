@@ -1,5 +1,5 @@
 pyserial
 tornado
 zmq
-PyObjC
+PyObjC==9.1
 certifi
